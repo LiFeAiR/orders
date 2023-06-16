@@ -82,7 +82,7 @@ func run(logger *logrus.Logger) error { // nolint: funlen
 		logger.Fatal("cannot init db")
 	}
 
-	app, err := orders.NewApp(Version, orm)
+	app, err := orders.NewOrdersService(Version, orm)
 	if err != nil {
 		logger.Fatal("cannot init app")
 	}

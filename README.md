@@ -41,7 +41,7 @@ select number from orders where client_id = 1 order by id desc limit 1;
 
 go run ./cmd/orders/main.go
 
-see this code appImpl.Create
+see this code ordersServiceImpl.Create
 
 
 ```go

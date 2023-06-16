@@ -6,23 +6,21 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 	"pmozhchil/orders/api/pmozhchil/orders"
+	gw "pmozhchil/orders/api/pmozhchil/orders"
 	"pmozhchil/orders/internal/app/repository"
 )
 
-type App interface {
-	List(context.Context, *orders.ListRequest) (*orders.ListResponse, error)
-	Create(context.Context, *orders.CreateRequest) (*emptypb.Empty, error)
-}
+var _ gw.OrdersServiceServer = (*ordersServiceImpl)(nil)
 
-type appImpl struct {
+type ordersServiceImpl struct {
 	db   *gorm.DB
 	repo repository.Repository
 
 	serviceVersion string
 }
 
-func NewApp(version string, db *gorm.DB) (App, error) {
-	return &appImpl{
+func NewOrdersService(version string, db *gorm.DB) (gw.OrdersServiceServer, error) {
+	return &ordersServiceImpl{
 		db:   db,
 		repo: repository.New(db),
 
@@ -30,8 +28,8 @@ func NewApp(version string, db *gorm.DB) (App, error) {
 	}, nil
 }
 
-func (a *appImpl) List(ctx context.Context, request *orders.ListRequest) (*orders.ListResponse, error) {
-	sql, err := a.db.DB()
+func (o *ordersServiceImpl) List(ctx context.Context, request *orders.ListRequest) (*orders.ListResponse, error) {
+	sql, err := o.db.DB()
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +59,9 @@ func (a *appImpl) List(ctx context.Context, request *orders.ListRequest) (*order
 	return &orders.ListResponse{Orders: items}, nil
 }
 
-func (a *appImpl) Create(ctx context.Context, request *orders.CreateRequest) (*emptypb.Empty, error) {
-	//err := a.repo.WithCte(ctx, request.ClientId)
-	err := a.repo.WithSelect(ctx, request.ClientId)
+func (o *ordersServiceImpl) Create(ctx context.Context, request *orders.CreateRequest) (*emptypb.Empty, error) {
+	err := o.repo.WithCte(ctx, request.ClientId)
+	//err := o.repo.WithSelect(ctx, request.ClientId)
 	if err != nil {
 		return nil, err
 	}
