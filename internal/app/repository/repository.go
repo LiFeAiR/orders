@@ -9,10 +9,29 @@ import (
 type Repository interface {
 	WithSelect(ctx context.Context, clientId int64) error
 	WithCte(ctx context.Context, clientId int64) error
+	List(ctx context.Context, clientId int64) (*sql2.Rows, error)
 }
 
+// TODO using gorm style
 type repoImpl struct {
 	db *gorm.DB
+}
+
+func (r *repoImpl) List(ctx context.Context, clientId int64) (*sql2.Rows, error) {
+	sql, err := r.db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	return sql.QueryContext(ctx, "select "+
+		"id, "+
+		"client_id, "+
+		"number, "+
+		"order_number "+
+		"from orders "+
+		"where client_id = $1 "+
+		"order by id "+
+		"limit 10", clientId)
 }
 
 func (r *repoImpl) WithSelect(ctx context.Context, clientId int64) error {

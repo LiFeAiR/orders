@@ -29,20 +29,7 @@ func NewOrdersService(version string, db *gorm.DB) (gw.OrdersServiceServer, erro
 }
 
 func (o *ordersServiceImpl) List(ctx context.Context, request *orders.ListRequest) (*orders.ListResponse, error) {
-	sql, err := o.db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := sql.QueryContext(ctx, "select "+
-		"id, "+
-		"client_id, "+
-		"number, "+
-		"order_number "+
-		"from orders "+
-		"where client_id = $1 "+
-		"order by id "+
-		"limit 10", request.ClientId)
+	rows, err := o.repo.List(ctx, request.GetClientId())
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +47,8 @@ func (o *ordersServiceImpl) List(ctx context.Context, request *orders.ListReques
 }
 
 func (o *ordersServiceImpl) Create(ctx context.Context, request *orders.CreateRequest) (*emptypb.Empty, error) {
-	err := o.repo.WithCte(ctx, request.ClientId)
-	//err := o.repo.WithSelect(ctx, request.ClientId)
+	err := o.repo.WithCte(ctx, request.GetClientId())
+	//err := o.repo.WithSelect(ctx, request.GetClientId())
 	if err != nil {
 		return nil, err
 	}
