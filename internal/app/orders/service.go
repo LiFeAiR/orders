@@ -47,8 +47,9 @@ func (o *ordersServiceImpl) List(ctx context.Context, request *orders.ListReques
 }
 
 func (o *ordersServiceImpl) Create(ctx context.Context, request *orders.CreateRequest) (*emptypb.Empty, error) {
-	err := o.repo.WithCte(ctx, request.GetClientId())
+	//err := o.repo.WithCte(ctx, request.GetClientId())
 	//err := o.repo.WithSelect(ctx, request.GetClientId())
+	err := o.repo.WithLock(ctx, request.GetClientId())
 	if err != nil {
 		return nil, err
 	}

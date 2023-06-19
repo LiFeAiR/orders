@@ -12,6 +12,7 @@ var _ Repository = (*repoImpl)(nil)
 type Repository interface {
 	WithSelect(ctx context.Context, clientId int64) error
 	WithCte(ctx context.Context, clientId int64) error
+	WithLock(ctx context.Context, clientId int64) error
 	List(ctx context.Context, clientId int64) (*sql.Rows, error)
 }
 
@@ -60,6 +61,61 @@ func (r *repoImpl) WithSelect(ctx context.Context, clientId int64) error {
 	_, err = q.Exec(
 		`insert into orders(client_id, number, order_number)values($1, $2, concat($1, '-', $2))`,
 		clientId, nextNumber)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repoImpl) WithLock(ctx context.Context, clientId int64) (err error) {
+	q, err := r.db.DB()
+	if err != nil {
+		return err
+	}
+	var nextNumber int64
+	tx, err := q.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	_, err = tx.ExecContext(ctx,
+		`SELECT pg_advisory_xact_lock($1)`,
+		clientId,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = tx.QueryRowContext(ctx,
+		`select number from orders where client_id = $1 order by id desc limit 1`,
+		clientId,
+	).Scan(&nextNumber)
+
+	switch {
+	case err == sql.ErrNoRows:
+		//skip
+	case err != nil:
+		return err
+	}
+
+	nextNumber = nextNumber + 1
+	_, err = tx.Exec(
+		`insert into orders(client_id, number, order_number)values($1, $2, concat($1, '-', $2))`,
+		clientId, nextNumber)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}

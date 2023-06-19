@@ -49,10 +49,20 @@ see this code ordersServiceImpl.Create
 // http_req_failed................: 0.00%  ✓ 0          ✗ 9556
 err := a.repo.WithCte(ctx, request.ClientId)
 ```
+
 ```go
 // work with errors
 // http_req_failed................: 80.27% ✓ 6759       ✗ 1661
 err := a.repo.WithSelect(ctx, request.ClientId)
+```
+
+
+
+```go
+// тоже самое но с использованием pg_advisory_xact_lock
+// http_req_failed................: 0.00%  ✓ 0          ✗ 15852
+
+err := a.repo.WithLock(ctx, request.ClientId)
 ```
 
 k6 run tank/k6.js
